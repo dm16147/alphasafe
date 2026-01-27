@@ -1,11 +1,10 @@
+import { api } from "@shared/routes";
+import { insertPhotoSchema, insertTechnicianSchema, users as usersTable } from "@shared/schema";
 import type { Express } from "express";
 import type { Server } from "http";
-import { storage } from "./storage";
-import { api } from "@shared/routes";
 import { z } from "zod";
-import { insertPhotoSchema, insertTechnicianSchema, technicians, users as usersTable } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import { setupAuth, registerAuthRoutes, isAuthenticated, authStorage } from "./replit_integrations/auth";
+import { authStorage, isAuthenticated, registerAuthRoutes, setupAuth } from "./replit_integrations/auth";
+import { storage } from "./storage";
 
 // ... rest of imports
 async function sendPushNotification(technicianName: string, intervention: any) {
@@ -260,7 +259,7 @@ export async function registerRoutes(
     try {
       const input = api.interventions.create.input.parse(req.body);
       const intervention = await storage.createIntervention(input);
-      
+
       // Notify technician via email if assigned
       if (intervention.technician) {
         const fullIntervention = await storage.getIntervention(intervention.id);
@@ -269,7 +268,7 @@ export async function registerRoutes(
           sendAssignmentEmail(intervention.technician, fullIntervention, isAssistance).catch(console.error);
         }
       }
-      
+
       res.status(201).json(intervention);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -381,69 +380,8 @@ export async function registerRoutes(
     }
   });
 
-  // Seed data
-  await seedDatabase();
-
   return httpServer;
 }
 
-import { db } from "./db";
 import bcrypt from "bcryptjs";
-
-async function seedDatabase() {
-  // Add specific admin user
-  const adminEmail = "marcelo_cristovao@live.com.pt";
-  const existingAdmin = await authStorage.getUserByEmail(adminEmail);
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash("123", 10);
-    await authStorage.upsertUser({
-      email: adminEmail,
-      password: hashedPassword,
-      firstName: "Marcelo",
-      lastName: "Cristóvão",
-      role: "admin",
-    });
-    console.log(`[SEED] Admin user ${adminEmail} created.`);
-  }
-
-  const existingClients = await storage.getClients();
-  if (existingClients.length === 0) {
-    const client1 = await storage.createClient({
-      name: "Empresa Segura Lda",
-      nif: "501234567",
-      address: "Rua da Segurança, 123, Lisboa",
-      phone: "210000000",
-      email: "contacto@empresasegura.pt"
-    });
-    
-    const client2 = await storage.createClient({
-      name: "João Silva",
-      nif: "200100200",
-      address: "Av. da Liberdade, 45, Porto",
-      phone: "910000000",
-      email: "joao.silva@email.com"
-    });
-
-    await storage.createIntervention({
-      clientId: client1.id,
-      serviceType: ["Videovigilância"],
-      equipmentModel: "Hikvision Camera X1",
-      serialNumber: "SN123456",
-      status: "Em curso",
-      technician: "Carlos",
-      notes: "Câmara não grava à noite.",
-      assistanceDate: null
-    });
-
-    await storage.createIntervention({
-      clientId: client2.id,
-      serviceType: ["Alarme"],
-      equipmentModel: "Ajax Hub 2",
-      serialNumber: "AJ987654",
-      status: "Concluído",
-      technician: "Manuel",
-      notes: "Bateria substituída.",
-      assistanceDate: new Date()
-    });
-  }
-}
+import { db } from "./db";
