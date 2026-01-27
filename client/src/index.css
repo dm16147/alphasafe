@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  /* Safe Security Branding: Black & Beige/Gold */
+  --background: 40 20% 98%;
+  --foreground: 30 15% 10%;
+
+  --primary: 35 45% 65%; /* Beige/Gold from logo */
+  --primary-foreground: 30 15% 10%;
+
+  --secondary: 30 15% 10%; /* Black from logo */
+  --secondary-foreground: 35 45% 65%;
+
+  --muted: 35 25% 95%;
+  --muted-foreground: 30 10% 45%;
+
+  --accent: 35 45% 65%;
+  --accent-foreground: 30 15% 10%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 35 25% 85%;
+  --input: 35 25% 85%;
+  --ring: 35 45% 65%;
+
+  --radius: 0.75rem;
+
+  /* Status Colors */
+  --status-todo: 215 16% 47%;
+  --status-progress: 221 83% 53%;
+  --status-billing: 45 93% 47%;
+  --status-done: 142 71% 45%;
+  --status-assistance: 0 84% 60%;
+}
+
+.dark {
+  --background: 30 15% 5%;
+  --foreground: 35 30% 95%;
+
+  --primary: 35 45% 65%;
+  --primary-foreground: 30 15% 5%;
+
+  --secondary: 30 15% 15%;
+  --secondary-foreground: 35 45% 65%;
+
+  --muted: 30 15% 15%;
+  --muted-foreground: 35 15% 65%;
+
+  --accent: 30 15% 15%;
+  --accent-foreground: 35 45% 65%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 30 15% 15%;
+  --input: 30 15% 15%;
+  --ring: 35 45% 65%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-bold tracking-tight text-foreground;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
