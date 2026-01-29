@@ -89,11 +89,8 @@ export function useUpdateClient() {
       });
 
       if (!res.ok) {
-        if (res.status === 400) {
-          const error = api.clients.update.responses[400].parse(await res.json());
-          throw new Error(error.message);
-        }
-        throw new Error("Failed to update client");
+        const errorData = await res.json().catch(() => ({ message: "Failed to update client" }));
+        throw new Error(errorData.message || "Failed to update client");
       }
       return api.clients.update.responses[200].parse(await res.json());
     },

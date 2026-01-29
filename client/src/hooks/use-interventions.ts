@@ -105,11 +105,8 @@ export function useUpdateIntervention() {
       });
 
       if (!res.ok) {
-        if (res.status === 400) {
-          const error = api.interventions.update.responses[400].parse(await res.json());
-          throw new Error(error.message);
-        }
-        throw new Error("Failed to update intervention");
+        const errorData = await res.json().catch(() => ({ message: "Failed to update intervention" }));
+        throw new Error(errorData.message || "Failed to update intervention");
       }
       return api.interventions.update.responses[200].parse(await res.json());
     },

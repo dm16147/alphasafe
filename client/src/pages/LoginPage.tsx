@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,15 +9,31 @@ import { Loader2 } from "lucide-react";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Login falhou");
+      }
+      return res.json();
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/auth/user"], user);
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      await login({ email, password });
+      await loginMutation.mutateAsync({ email, password });
       toast({ title: "Bem-vindo!", description: "Sessão iniciada com sucesso." });
     } catch (error: any) {
       toast({
@@ -25,8 +41,6 @@ export default function LoginPage() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -71,9 +85,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-[#c4a57b] hover:bg-[#b3946a] text-black font-bold h-11 mt-2"
-              disabled={loading}
+              disabled={loginMutation.isPending}
             >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Entrar"}
+              {loginMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Entrar"}
             </Button>
             <div className="text-center mt-6 py-4 border-t border-white/5">
               <p className="text-xs text-gray-500 italic">

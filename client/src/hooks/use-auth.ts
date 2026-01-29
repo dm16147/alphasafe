@@ -18,7 +18,10 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function logout(): Promise<void> {
-  const response = await fetch("/api/logout");
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
   if (!response.ok) {
     throw new Error("Erro ao sair");
   }
@@ -31,12 +34,14 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: any) => {
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
