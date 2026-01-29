@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -89,7 +90,15 @@ export default function LoginPage() {
             >
               {loginMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Entrar"}
             </Button>
-            <div className="text-center mt-6 py-4 border-t border-white/5">
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-400">
+                Não tem conta?{" "}
+                <Link href="/register" className="text-[#c4a57b] hover:underline">
+                  Registar-se
+                </Link>
+              </p>
+            </div>
+            <div className="text-center mt-4 pt-4 border-t border-white/5">
               <p className="text-xs text-gray-500 italic">
                 Acesso restrito a funcionários autorizados da AlphaSafe.
               </p>

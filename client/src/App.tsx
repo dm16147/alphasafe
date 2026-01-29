@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,12 +8,14 @@ import Clients from "@/pages/Clients";
 import Technicians from "@/pages/Technicians";
 import Users from "@/pages/Users";
 import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
 function Router() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const [location, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -24,7 +26,16 @@ function Router() {
   }
 
   if (!isAuthenticated) {
+    if (location === "/register") {
+      return <RegisterPage />;
+    }
     return <LoginPage />;
+  }
+
+  // Redirect authenticated users away from auth pages
+  if (location === "/login" || location === "/register") {
+    setLocation("/");
+    return null;
   }
 
   return (

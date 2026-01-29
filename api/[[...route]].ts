@@ -56,13 +56,66 @@ const requireAuth = async (c: any, next: any) => {
 };
 
 // Auth
+const registerSchema = z.object({
+  email: z.string().email().toLowerCase(),
+  password: z.string().min(8, "Palavra-passe deve ter pelo menos 8 caracteres"),
+  firstName: z.string().min(1, "Nome é obrigatório"),
+  lastName: z.string().min(1, "Apelido é obrigatório"),
+});
+
+function getWhitelistedEmails(): Set<string> {
+  const whitelist = process.env.REGISTRATION_WHITELIST || "";
+  return new Set(
+    whitelist
+      .split(",")
+      .map(email => email.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+app.post("/auth/register", zValidator("json", registerSchema), async (c) => {
+  const { email, password, firstName, lastName } = c.req.valid("json");
+
+  const whitelistedEmails = getWhitelistedEmails();
+
+  if (whitelistedEmails.size !== 0 && !whitelistedEmails.has(email)) {
+    throw new HTTPException(403, { message: "E-mail não autorizado para registo" });
+  }
+
+  const existingUser = await authStorage.getUserByEmail(email);
+  if (existingUser) {
+    throw new HTTPException(409, { message: "Utilizador já existe" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+  const user = await authStorage.createUser({
+    email,
+    password: hashedPassword,
+    firstName,
+    lastName,
+    role: "technician",
+  });
+
+  const token = await createToken(user.id);
+  setCookie(c, "auth_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax",
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/"
+  });
+
+  const { password: _, ...userWithoutPassword } = user;
+  return c.json(userWithoutPassword, 201);
+});
+
 app.post("/auth/login", zValidator("json", z.object({
   email: z.string().email(),
   password: z.string().min(1)
 })), async (c) => {
   const { email, password } = c.req.valid("json");
   const user = await authStorage.getUserByEmail(email);
-  
+
   if (!user?.password || !(await bcrypt.compare(password, user.password))) {
     throw new HTTPException(401, { message: "Credenciais inválidas" });
   }
