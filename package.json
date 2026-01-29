@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "engines": {
-    "node": "23.2.0"
-  },
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
     "dev:api": "cross-env NODE_ENV=development tsx --watch server/dev.ts",
@@ -78,6 +75,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.5",
+    "tsx": "^4.20.5",
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
     "zod": "^3.24.2",
@@ -98,7 +96,6 @@
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.20.5",
     "typescript": "5.6.3",
     "vite": "^7.3.0"
   }
