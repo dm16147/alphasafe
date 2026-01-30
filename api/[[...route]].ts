@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { SignJWT, jwtVerify } from "jose";
 import { HTTPException } from "hono/http-exception";
 import { getCookie, setCookie } from "hono/cookie";
-import { storage } from "../server/storage";
-import { authStorage } from "../server/auth/storage";
+import { storage } from "../server/storage.js";
+import { authStorage } from "../server/auth/storage.js";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { insertClientSchema, insertInterventionSchema, insertTechnicianSchema, insertUserSchema } from "@shared/schema";
@@ -18,6 +18,16 @@ type Variables = {
 };
 
 const app = new Hono<{ Variables: Variables }>();
+
+// Health check endpoint for debugging
+app.get("/health", (c) => {
+  console.log("Health check endpoint reached");
+  return c.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || "unknown"
+  });
+});
 
 async function createToken(userId: string): Promise<string> {
   return new SignJWT({ sub: userId })

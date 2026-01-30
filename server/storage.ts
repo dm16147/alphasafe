@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import {
   clients, interventions, photos, technicians,
   type Client, type InsertClient, type UpdateClientRequest,

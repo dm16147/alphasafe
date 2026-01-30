@@ -2,6 +2,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/[[...route]]" }
-  ]
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/[[...route]]"
+    }
+  ],
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 10
+    }
+  }
 }
