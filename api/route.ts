@@ -292,5 +292,6 @@ app.delete("/users/:id", requireAuth, async (c) => {
 
 // Export app for local development
 export { app };
-// Export fetch handler for Vercel serverless
-export default app.fetch;
+
+// Export handler for Vercel serverless - Hono app.fetch is compatible with Web Standard Request/Response
+export default app;
