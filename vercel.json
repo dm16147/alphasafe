@@ -1,14 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
-  "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[[...route]]" }
-  ],
-  "functions": {
-    "api/[[...route]].ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
+  ]
 }

@@ -280,4 +280,5 @@ app.delete("/users/:id", requireAuth, async (c) => {
   return c.json({ message: "Deleted" });
 });
 
-export default app;
+// For Vercel serverless
+export default app.fetch;
