@@ -3,7 +3,7 @@
   "outputDirectory": "dist/public",
   "functions": {
     "api/route.ts": {
-      "includeFiles": ["shared/**"]
+      "includeFiles": "shared/**"
     }
   },
   "rewrites": [
