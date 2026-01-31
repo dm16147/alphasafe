@@ -6,7 +6,7 @@
 
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import * as schema from "../shared/schema.ts";
+import * as schema from "../shared/schema.js";
 import {
     clients, interventions, photos, technicians,
     type Client, type InsertClient,
@@ -18,7 +18,7 @@ import {
     type Technician,
     type UpdateClientRequest,
     type UpdateInterventionRequest
-} from "../shared/schema.ts";
+} from "../shared/schema.js";
 
 type Database = NodePgDatabase<typeof schema>;
 

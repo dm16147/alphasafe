@@ -5,8 +5,8 @@
 
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { users, type UpsertUser, type User } from "../shared/models/auth.ts";
-import * as schema from "../shared/schema.ts";
+import { users, type UpsertUser, type User } from "../shared/models/auth.js";
+import * as schema from "../shared/schema.js";
 
 type Database = NodePgDatabase<typeof schema>;
 

@@ -3,7 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import 'dotenv/config';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
-import { app as api } from '../api/route';
+import { app as api } from '../api/route.js';
 
 const app = new Hono();
 

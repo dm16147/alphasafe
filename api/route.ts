@@ -7,11 +7,11 @@ import { getCookie, setCookie } from "hono/cookie";
 import { HTTPException } from "hono/http-exception";
 import { SignJWT, jwtVerify } from "jose";
 import { z } from "zod";
-import type { User } from "../shared/schema.ts";
-import { insertClientSchema, insertInterventionSchema, insertTechnicianSchema, insertUserSchema } from "../shared/schema.ts";
-import * as authStorage from "./auth.ts";
-import { getDb } from "./db.ts";
-import * as storage from "./storage.ts";
+import type { User } from "../shared/schema.js";
+import { insertClientSchema, insertInterventionSchema, insertTechnicianSchema, insertUserSchema } from "../shared/schema.js";
+import * as authStorage from "./auth.js";
+import { getDb } from "./db.js";
+import * as storage from "./storage.js";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET || "fallback-secret-min-32-chars-long");
 const TOKEN_EXPIRY = "7d";
