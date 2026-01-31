@@ -1,14 +1,17 @@
-import { Hono } from "hono";
-import { SignJWT, jwtVerify } from "jose";
-import { HTTPException } from "hono/http-exception";
-import { getCookie, setCookie } from "hono/cookie";
-import { storage } from "../server/storage";
-import { authStorage } from "../server/auth/storage";
+export const runtime = "nodejs";
+
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { insertClientSchema, insertInterventionSchema, insertTechnicianSchema, insertUserSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
-import type { User } from "@shared/schema";
+import { Hono } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
+import { SignJWT, jwtVerify } from "jose";
+import { z } from "zod";
+import type { User } from "../shared/schema.ts";
+import { insertClientSchema, insertInterventionSchema, insertTechnicianSchema, insertUserSchema } from "../shared/schema.ts";
+import * as authStorage from "./auth.ts";
+import { getDb } from "./db.ts";
+import * as storage from "./storage.ts";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET || "fallback-secret-min-32-chars-long");
 const TOKEN_EXPIRY = "7d";
@@ -17,13 +20,13 @@ type Variables = {
   user: User | null;
 };
 
-const app = new Hono<{ Variables: Variables }>();
+const app = new Hono<{ Variables: Variables }>().basePath("/api");
 
 // Health check endpoint for debugging
 app.get("/health", (c) => {
   console.log("Health check endpoint reached");
-  return c.json({ 
-    status: "ok", 
+  return c.json({
+    status: "ok",
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || "unknown"
   });
@@ -51,7 +54,8 @@ app.use("*", async (c, next) => {
   if (token) {
     const userId = await verifyToken(token);
     if (userId) {
-      const user = await authStorage.getUser(userId);
+      const db = getDb();
+      const user = await authStorage.getUser(db, userId);
       if (user) c.set("user", user);
     }
   }
@@ -92,13 +96,14 @@ app.post("/auth/register", zValidator("json", registerSchema), async (c) => {
     throw new HTTPException(403, { message: "E-mail não autorizado para registo" });
   }
 
-  const existingUser = await authStorage.getUserByEmail(email);
+  const db = getDb();
+  const existingUser = await authStorage.getUserByEmail(db, email);
   if (existingUser) {
     throw new HTTPException(409, { message: "Utilizador já existe" });
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
-  const user = await authStorage.createUser({
+  const user = await authStorage.createUser(db, {
     email,
     password: hashedPassword,
     firstName,
@@ -124,7 +129,8 @@ app.post("/auth/login", zValidator("json", z.object({
   password: z.string().min(1)
 })), async (c) => {
   const { email, password } = c.req.valid("json");
-  const user = await authStorage.getUserByEmail(email);
+  const db = getDb();
+  const user = await authStorage.getUserByEmail(db, email);
 
   if (!user?.password || !(await bcrypt.compare(password, user.password))) {
     throw new HTTPException(401, { message: "Credenciais inválidas" });
@@ -156,27 +162,31 @@ app.get("/auth/user", requireAuth, (c) => {
 // Clients
 app.get("/clients", requireAuth, async (c) => {
   const search = c.req.query("search");
-  const clients = await storage.getClients(search);
+  const db = getDb();
+  const clients = await storage.getClients(db, search);
   return c.json(clients);
 });
 
 app.get("/clients/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id"));
-  const client = await storage.getClient(id);
+  const db = getDb();
+  const client = await storage.getClient(db, id);
   if (!client) throw new HTTPException(404, { message: "Cliente não encontrado" });
   return c.json(client);
 });
 
 app.post("/clients", requireAuth, zValidator("json", insertClientSchema), async (c) => {
   const data = c.req.valid("json");
-  const client = await storage.createClient(data);
+  const db = getDb();
+  const client = await storage.createClient(db, data);
   return c.json(client, 201);
 });
 
 app.patch("/clients/:id", requireAuth, zValidator("json", insertClientSchema.partial()), async (c) => {
   const id = parseInt(c.req.param("id"));
   const updates = c.req.valid("json");
-  const client = await storage.updateClient(id, updates);
+  const db = getDb();
+  const client = await storage.updateClient(db, id, updates);
   return c.json(client);
 });
 
@@ -185,35 +195,40 @@ app.get("/interventions", requireAuth, async (c) => {
   const status = c.req.query("status");
   const technician = c.req.query("technician");
   const clientId = c.req.query("clientId") ? parseInt(c.req.query("clientId")!) : undefined;
-  const interventions = await storage.getInterventions({ status, technician, clientId });
+  const db = getDb();
+  const interventions = await storage.getInterventions(db, { status, technician, clientId });
   return c.json(interventions);
 });
 
 app.get("/interventions/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id"));
-  const intervention = await storage.getIntervention(id);
+  const db = getDb();
+  const intervention = await storage.getIntervention(db, id);
   if (!intervention) throw new HTTPException(404, { message: "Intervenção não encontrada" });
   return c.json(intervention);
 });
 
 app.post("/interventions", requireAuth, zValidator("json", insertInterventionSchema), async (c) => {
   const data = c.req.valid("json");
-  const intervention = await storage.createIntervention(data);
-  const full = await storage.getIntervention(intervention.id);
+  const db = getDb();
+  const intervention = await storage.createIntervention(db, data);
+  const full = await storage.getIntervention(db, intervention.id);
   return c.json(full, 201);
 });
 
 app.patch("/interventions/:id", requireAuth, zValidator("json", insertInterventionSchema.partial()), async (c) => {
   const id = parseInt(c.req.param("id"));
   const updates = c.req.valid("json");
-  await storage.updateIntervention(id, updates);
-  const full = await storage.getIntervention(id);
+  const db = getDb();
+  await storage.updateIntervention(db, id, updates);
+  const full = await storage.getIntervention(db, id);
   return c.json(full);
 });
 
 app.delete("/interventions/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id"));
-  await storage.deleteIntervention(id);
+  const db = getDb();
+  await storage.deleteIntervention(db, id);
   return c.json({ message: "Deleted" });
 });
 
@@ -221,44 +236,51 @@ app.delete("/interventions/:id", requireAuth, async (c) => {
 app.post("/interventions/:id/photos", requireAuth, zValidator("json", z.object({ url: z.string().url() })), async (c) => {
   const interventionId = parseInt(c.req.param("id"));
   const { url } = c.req.valid("json");
-  const photo = await storage.addPhoto({ interventionId, url });
+  const db = getDb();
+  const photo = await storage.addPhoto(db, { interventionId, url });
   return c.json(photo, 201);
 });
 
 app.delete("/photos/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id"));
-  await storage.deletePhoto(id);
+  const db = getDb();
+  await storage.deletePhoto(db, id);
   return c.json({ message: "Deleted" });
 });
 
 // Technicians
 app.get("/technicians", requireAuth, async (c) => {
-  const technicians = await storage.getTechnicians();
+  const db = getDb();
+  const technicians = await storage.getTechnicians(db);
   return c.json(technicians);
 });
 
 app.post("/technicians", requireAuth, zValidator("json", insertTechnicianSchema), async (c) => {
   const data = c.req.valid("json");
-  const technician = await storage.createTechnician(data);
+  const db = getDb();
+  const technician = await storage.createTechnician(db, data);
   return c.json(technician, 201);
 });
 
 app.patch("/technicians/:id", requireAuth, zValidator("json", insertTechnicianSchema.partial()), async (c) => {
   const id = parseInt(c.req.param("id"));
   const updates = c.req.valid("json");
-  const technician = await storage.updateTechnician(id, updates);
+  const db = getDb();
+  const technician = await storage.updateTechnician(db, id, updates);
   return c.json(technician);
 });
 
 app.delete("/technicians/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id"));
-  await storage.deleteTechnician(id);
+  const db = getDb();
+  await storage.deleteTechnician(db, id);
   return c.json({ message: "Deleted" });
 });
 
 // Users
 app.get("/users", requireAuth, async (c) => {
-  const users = await authStorage.getUsers();
+  const db = getDb();
+  const users = await authStorage.getUsers(db);
   return c.json(users.map(({ password: _, ...user }) => user));
 });
 
@@ -268,7 +290,8 @@ app.post("/users", requireAuth, zValidator("json", insertUserSchema.required({ p
     throw new HTTPException(400, { message: "Password required" });
   }
   const hashedPassword = await bcrypt.hash(data.password, 10);
-  const user = await authStorage.createUser({ ...data, password: hashedPassword });
+  const db = getDb();
+  const user = await authStorage.createUser(db, { ...data, password: hashedPassword });
   const { password: _, ...userWithoutPassword } = user;
   return c.json(userWithoutPassword, 201);
 });
@@ -279,14 +302,16 @@ app.patch("/users/:id", requireAuth, zValidator("json", insertUserSchema.partial
   if (updates.password) {
     updates.password = await bcrypt.hash(updates.password, 10);
   }
-  const user = await authStorage.updateUser(id, updates);
+  const db = getDb();
+  const user = await authStorage.updateUser(db, id, updates);
   const { password: _, ...userWithoutPassword } = user;
   return c.json(userWithoutPassword);
 });
 
 app.delete("/users/:id", requireAuth, async (c) => {
   const id = c.req.param("id");
-  await authStorage.deleteUser(id);
+  const db = getDb();
+  await authStorage.deleteUser(db, id);
   return c.json({ message: "Deleted" });
 });
 

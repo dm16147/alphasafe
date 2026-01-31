@@ -1,10 +1,9 @@
-import { pgTable, text, serial, timestamp, integer, boolean, varchar, jsonb, index } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations, sql } from "drizzle-orm";
-import { users } from "./models/auth";
-
-export * from "./models/auth";
+import { users } from "./models/auth.ts";
+export * from "./models/auth.ts";
 
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
@@ -19,13 +18,13 @@ export const clients = pgTable("clients", {
 export const interventions = pgTable("interventions", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull().references(() => clients.id),
-  serviceType: text("service_type").array().notNull().default(sql`'{}'::text[]`), // Videoporteiro, Videovigilância, Alarme, Domótica, Controlo de acessos, Sistemas de Segurança Contra Incêndios
+  serviceType: text("service_type").array().notNull().default(sql`'{}'::text[]`),
   equipmentModel: text("equipment_model").notNull(),
-  serialNumber: text("serial_number").notNull(), // Obrigatório conforme pedido
-  status: text("status").notNull().default("Em curso"), // Em curso, A faturar, Concluído, Assistência
-  assistanceDate: timestamp("assistance_date"), // Registo de assistência (data e hora)
-  technician: text("technician").notNull(), // Obrigatório conforme pedido
-  notes: text("notes"), // Observações técnicas
+  serialNumber: text("serial_number").notNull(),
+  status: text("status").notNull().default("Em curso"),
+  assistanceDate: timestamp("assistance_date"),
+  technician: text("technician").notNull(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -74,11 +73,11 @@ export const technicians = pgTable("technicians", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email"), // Opcional
-  role: text("role").notNull().default("technician"), // technician, office
+  role: text("role").notNull().default("technician"),
   receiveAssignmentNotifications: boolean("receive_assignment_notifications").notNull().default(true),
   receiveBillingNotifications: boolean("receive_billing_notifications").notNull().default(false),
   receiveAssistanceNotifications: boolean("receive_assistance_notifications").notNull().default(true),
-  active: text("active").notNull().default("Ativo"), // Ativo, Férias, Baixa, Inativo
+  active: text("active").notNull().default("Ativo"),
   vacationStart: timestamp("vacation_start"),
   vacationEnd: timestamp("vacation_end"),
   sickLeaveStart: timestamp("sick_leave_start"),

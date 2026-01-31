@@ -7,3 +7,5 @@ vite.config.ts.*
 
 .env
 /server/seed.ts
+.vercel
+.env*.local
